@@ -145,6 +145,30 @@ body {
 
 .bullets li { margin-bottom: 6px; }
 
+.link {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 650;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.app-footer {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  background: rgba(17, 26, 46, 0.7);
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+}
+
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

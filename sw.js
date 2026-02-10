@@ -5,12 +5,13 @@
 // IMPORTANT: Do NOT cache ad network requests.
 // We only cache our own static files.
 
-const CACHE_NAME = 'expense-guard-v2';
+const CACHE_NAME = 'expense-guard-v3';
 
 // The "app shell" files required to load the UI offline.
 const ASSETS = [
   './',
   './index.html',
+  './privacy.html',
   './style.css',
   './app.js',
   './db.js',

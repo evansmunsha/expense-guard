@@ -29,7 +29,6 @@
     monthlyBudget: 0,
     warnAtPercent: 80,
     budgetNotice: null,
-    lastNudgeDate: null,
   };
 
   // ------------------- DOM helpers -------------------
@@ -141,7 +140,6 @@
   let isPremium = false;
   let currentMonth = monthKey(todayKey());
   let currentCategory = 'all';
-  const subNoticeCache = new Set();
 
   // ------------------- DOM elements -------------------
 
@@ -149,6 +147,9 @@
   const statToday = $('stat-today');
   const statMonth = $('stat-month');
   const statBudget = $('stat-budget');
+  const hintToday = $('hint-today');
+  const hintMonth = $('hint-month');
+  const hintBudget = $('hint-budget');
   const adFreeStatus = $('adfree-status');
   const adSlot = $('ad-slot');
 
@@ -218,27 +219,40 @@
 
   function renderStats() {
     const t = todayKey();
-    const todayTotal = expenses.filter((e) => e.date === t).reduce((s, e) => s + e.amount, 0);
-    const { total: monthTotal } = computeTotalsForMonth(currentMonth);
+    const todayItems = expenses.filter((e) => e.date === t);
+    const todayTotal = todayItems.reduce((s, e) => s + e.amount, 0);
+    const { monthItems, total: monthTotal } = computeTotalsForMonth(currentMonth);
 
     statToday.textContent = money(settings, todayTotal);
     statMonth.textContent = money(settings, monthTotal);
 
+    if (hintToday) {
+      hintToday.textContent = todayItems.length
+        ? `${todayItems.length} item${todayItems.length === 1 ? '' : 's'} logged today.`
+        : 'No expenses logged today.';
+    }
+    if (hintMonth) {
+      hintMonth.textContent = monthItems.length
+        ? `${monthItems.length} item${monthItems.length === 1 ? '' : 's'} this month.`
+        : 'No expenses yet for this month.';
+    }
+
     if (settings.monthlyBudget > 0) {
       statBudget.textContent = money(settings, settings.monthlyBudget);
       const pct = Math.round((monthTotal / settings.monthlyBudget) * 100);
-      const level = pct >= 100 ? 100 : pct >= settings.warnAtPercent ? settings.warnAtPercent : 0;
-      if (level > 0) {
-        const notice = settings.budgetNotice || { month: '', level: 0 };
-        if (notice.month !== currentMonth || Number(notice.level || 0) < level) {
-          if (level >= 100) toast(`Budget exceeded: ${pct}% used.`, 'bad');
-          else toast(`Budget warning: ${pct}% used.`, 'warn');
-          settings.budgetNotice = { month: currentMonth, level };
-          void safeDb(window.ExpenseDB.saveSettings(settings), 'Could not save budget notice.');
+      if (hintBudget) {
+        if (pct >= 100) {
+          const over = monthTotal - settings.monthlyBudget;
+          hintBudget.textContent = `Budget exceeded by ${money(settings, over)} (${pct}% used).`;
+        } else if (pct >= settings.warnAtPercent) {
+          hintBudget.textContent = `Near budget limit: ${pct}% used.`;
+        } else {
+          hintBudget.textContent = `Budget status: ${pct}% used.`;
         }
       }
     } else {
       statBudget.textContent = 'Not set';
+      if (hintBudget) hintBudget.textContent = 'Set a monthly budget to get status updates.';
     }
   }
 
@@ -319,15 +333,6 @@
         </div>
       `;
       subList.appendChild(li);
-
-      if (soon || overdue) {
-        const noticeKey = `${s.id}:${s.next}:${overdue ? 'overdue' : 'soon'}`;
-        if (!subNoticeCache.has(noticeKey)) {
-          if (soon) toast(`Subscription: ${s.note || s.category} renews soon.`, 'warn');
-          if (overdue) toast(`Subscription overdue: ${s.note || s.category}.`, 'bad');
-          subNoticeCache.add(noticeKey);
-        }
-      }
     }
   }
 
@@ -619,7 +624,6 @@
       monthlyBudget: Math.max(0, Number(data.settings?.monthlyBudget || 0)),
       warnAtPercent: Math.max(1, Math.min(100, Number(data.settings?.warnAtPercent || 80))),
       budgetNotice: null,
-      lastNudgeDate: null,
     };
     const newPremium = Boolean(data.entitlement?.isPremium);
 
@@ -816,14 +820,4 @@
 
   renderAll();
 
-  // Gentle reminder while app is open (local-only)
-  setTimeout(async () => {
-    const today = todayKey();
-    const hasToday = expenses.some((e) => e.date === today);
-    if (hasToday) return;
-    if (settings.lastNudgeDate === today) return;
-    toast('No expense logged today. Add one to stay on track.', 'info');
-    settings.lastNudgeDate = today;
-    void safeDb(window.ExpenseDB.saveSettings(settings), 'Could not save reminder.');
-  }, 15000);
 })();
