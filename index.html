@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f62fe" />
+    <title>Expense Guard</title>
+
+    <!-- PWA manifest (installability) -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- App styles -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <img class="brand-icon" src="icons/icon-192.png" alt="App icon" />
+        <div>
+          <h1>Expense Guard</h1>
+          <p class="muted">Track spending. Catch subscriptions. Stop money leaks.</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-upgrade" class="btn btn-gold" type="button">Go Ad-Free</button>
+        <button id="btn-restore" class="btn btn-ghost" type="button">Restore</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- Top stats -->
+      <section class="cards">
+        <div class="card">
+          <p class="label">Today</p>
+          <p id="stat-today" class="stat">USD 0</p>
+          <p id="hint-today" class="muted">Add your first expense.</p>
+        </div>
+        <div class="card">
+          <p class="label">This month</p>
+          <p id="stat-month" class="stat">USD 0</p>
+          <p id="hint-month" class="muted">We'll total it automatically.</p>
+        </div>
+        <div class="card">
+          <p class="label">Budget</p>
+          <p id="stat-budget" class="stat">Not set</p>
+          <p id="hint-budget" class="muted">Set a monthly budget for alerts.</p>
+        </div>
+      </section>
+
+      <!-- Tabs -->
+      <nav class="tabs" aria-label="Sections">
+        <button class="tab is-active" data-tab="expenses" type="button">Expenses</button>
+        <button class="tab" data-tab="subscriptions" type="button">Subscriptions</button>
+        <button class="tab" data-tab="reports" type="button">Reports</button>
+        <button class="tab" data-tab="settings" type="button">Settings</button>
+      </nav>
+
+      <!-- Expenses tab -->
+      <section id="tab-expenses" class="tab-panel is-active">
+        <div class="panel-head">
+          <h2>Expenses</h2>
+          <button id="btn-open-add" class="btn" type="button">+ Add</button>
+        </div>
+        <p class="muted">Log any spend with a date and category. Use the filters to view a specific month or category.</p>
+        <p class="muted">Use the Edit button on any item to update it later.</p>
+
+        <div class="filters">
+          <label class="field">
+            <span class="label">Month</span>
+            <input id="month-picker" type="month" />
+          </label>
+          <label class="field">
+            <span class="label">Category</span>
+            <select id="category-filter">
+              <option value="all">All</option>
+              <option value="Food">Food</option>
+              <option value="Transport">Transport</option>
+              <option value="Data">Data</option>
+              <option value="Bills">Bills</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+        </div>
+
+        <ul id="expense-list" class="list" aria-label="Expense list"></ul>
+        <p id="expense-empty" class="muted empty">No expenses yet for this view.</p>
+      </section>
+
+      <!-- Subscriptions tab -->
+      <section id="tab-subscriptions" class="tab-panel">
+        <div class="panel-head">
+          <h2>Subscriptions</h2>
+          <button id="btn-open-add-sub" class="btn" type="button">+ Add subscription</button>
+        </div>
+        <p class="muted">Track recurring payments like streaming, rent, or data bundles.</p>
+        <p class="muted">Renewal alerts and upcoming charges appear here so you never miss a payment.</p>
+        <ul id="sub-list" class="list" aria-label="Subscription list"></ul>
+        <p id="sub-empty" class="muted empty">No subscriptions yet.</p>
+      </section>
+
+      <!-- Reports tab -->
+      <section id="tab-reports" class="tab-panel">
+        <div class="panel-head">
+          <h2>Reports</h2>
+          <div class="panel-actions">
+            <button id="btn-export" class="btn btn-ghost" type="button">Export CSV</button>
+          </div>
+        </div>
+        <p class="muted">See where your money goes and spot trends for the current month.</p>
+
+        <div class="card">
+          <p class="label">Category breakdown (this month)</p>
+          <div id="category-breakdown" class="breakdown"></div>
+        </div>
+
+        <div class="card">
+          <p class="label">Money leak hints</p>
+          <p class="muted">Quick insights based on your spending this month.</p>
+          <ul id="leak-hints" class="bullets"></ul>
+        </div>
+      </section>
+
+      <!-- Settings tab -->
+      <section id="tab-settings" class="tab-panel">
+        <h2>Settings</h2>
+        <p class="muted">Set a monthly budget and manage your premium status.</p>
+
+        <div class="grid">
+          <div class="card">
+            <p class="label">Monthly budget (USD)</p>
+            <div class="row">
+              <input id="budget-input" type="number" min="0" step="1" placeholder="e.g. 500" />
+              <button id="btn-save-budget" class="btn" type="button">Save</button>
+            </div>
+            <p class="muted">We'll warn you at 80% and 100%.</p>
+          </div>
+
+          <div class="card">
+            <p class="label">Ad-Free status</p>
+            <p id="adfree-status" class="stat-small">Free</p>
+            <p class="muted">Ad-Free removes ads for an uninterrupted experience.</p>
+          </div>
+
+          <div class="card">
+            <p class="label">Backup & Restore</p>
+            <p class="muted">Keep your data safe. Export a local backup file and import it anytime.</p>
+            <div class="row" style="margin-top:8px;">
+              <button id="btn-export-json" class="btn" type="button">Export backup</button>
+              <button id="btn-import-json" class="btn btn-ghost" type="button">Import backup</button>
+              <input id="import-file" type="file" accept="application/json" hidden />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ads (free users only) -->
+      <section id="ad-slot" class="ad-slot" aria-label="Advertisement">
+        <p class="muted">Ad (Free users)</p>
+        <div id="ad-container" class="ad-box">
+          <!--
+            OPTIONAL: Put your AdSense snippet here.
+            NOTE: Ads require internet; the app still works offline.
+          -->
+          <p class="muted">Your ad will appear here.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Add/Edit modal -->
+    <dialog id="modal" class="modal">
+      <form method="dialog" id="modal-form" class="modal-card">
+        <div class="modal-head">
+          <h3 id="modal-title">Add expense</h3>
+          <button class="btn btn-ghost" value="cancel" type="submit" aria-label="Close">x</button>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span class="label">Type</span>
+            <select id="field-type">
+              <option value="expense">Expense</option>
+              <option value="subscription">Subscription</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="label">Amount (USD)</span>
+            <input id="field-amount" type="number" min="0" step="1" required />
+          </label>
+
+          <label class="field">
+            <span class="label">Category</span>
+            <select id="field-category">
+              <option value="Food">Food</option>
+              <option value="Transport">Transport</option>
+              <option value="Data">Data</option>
+              <option value="Bills">Bills</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="label">Note</span>
+            <input id="field-note" type="text" placeholder="e.g. groceries, taxi, electricity" />
+          </label>
+
+          <label class="field">
+            <span class="label">Date</span>
+            <input id="field-date" type="date" required />
+          </label>
+
+          <label class="field" id="renewal-field" hidden>
+            <span class="label">Renews every (days)</span>
+            <input id="field-renewal-days" type="number" min="1" step="1" value="30" />
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-delete" class="btn btn-danger" type="button" hidden>Delete</button>
+          <button id="btn-save" class="btn" value="default" type="submit">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Data + logic -->
+    <script src="db.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
